@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 import org.joo.atlas.models.Task;
 import org.joo.atlas.models.TaskTopo;
 import org.joo.atlas.models.impl.DefaultTaskTopo;
-import org.joo.atlas.support.exceptions.CyclicGraphDetected;
+import org.joo.atlas.support.exceptions.CyclicGraphDetectedException;
 
 public class DFSTopoSorting {
 
@@ -59,7 +59,7 @@ public class DFSTopoSorting {
         if (permMarks.contains(id))
             return;
         if (tmpMarks.contains(id))
-            throw new CyclicGraphDetected(id);
+            throw new CyclicGraphDetectedException(id);
 
         tmpMarks.add(id);
 
