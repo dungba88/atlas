@@ -25,7 +25,7 @@ public class PrintTaskJob implements Job {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-//        System.out.println("Finish task [" + context.getBatchId() + " - " + taskTopo.getTaskId() + "]");
+        System.out.println("Finish task [" + context.getBatchId() + " - " + taskTopo.getTaskId() + "]");
         return Promise.of(null);
     }
 }
