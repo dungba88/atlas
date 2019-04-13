@@ -4,9 +4,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.Future;
 
 import org.joo.atlas.models.Batch;
 import org.joo.atlas.models.BatchExecution;
@@ -15,24 +13,23 @@ import org.joo.atlas.models.TaskResult;
 import org.joo.atlas.models.impl.DefaultBatchExecution;
 import org.joo.atlas.models.impl.DefaultTaskResult;
 import org.joo.atlas.models.impl.FailedTaskResult;
+import org.joo.atlas.tasks.TaskNotifier;
+import org.joo.atlas.tasks.TaskRouter;
 import org.joo.atlas.tasks.TaskRunner;
 import org.joo.promise4j.Promise;
 import org.joo.promise4j.impl.CompletableDeferredObject;
 
-public class PooledTaskRunner implements TaskRunner {
+public class PooledTaskRunner implements TaskRunner, TaskNotifier {
 
     private Map<String, BatchExecution> executionMap = new ConcurrentHashMap<>();
 
-    private ExecutorService[] notifiers;
-
     private ExecutorService pool;
 
-    public PooledTaskRunner(int workerThreads, int notifierThreads) {
+    private TaskRouter router;
+
+    public PooledTaskRunner(int workerThreads, TaskRouter router) {
         this.pool = new ForkJoinPool(workerThreads);
-        this.notifiers = new ExecutorService[notifierThreads];
-        for (var i = 0; i < notifierThreads; i++) {
-            notifiers[i] = Executors.newSingleThreadExecutor();
-        }
+        this.router = router;
     }
 
     @Override
@@ -64,30 +61,22 @@ public class PooledTaskRunner implements TaskRunner {
     protected void runJob(String batchId, Job job) {
         try {
             job.run(job.getTaskTopo().getTask().getTaskArguments()) //
-               .map(result -> notifyJob(batchId, job, result, null))//
-               .fail(ex -> notifyJob(batchId, job, null, ex));
+               .then(result -> router.notifyJob(this, batchId, job, result, null))//
+               .fail(ex -> router.notifyJob(this, batchId, job, null, ex));
         } catch (Exception ex) {
-            notifyJobFailure(batchId, job, ex, null);
+            router.notifyJob(this, batchId, job, null, ex);
         }
     }
 
-    protected Future<Promise<TaskResult, Throwable>> notifyJob(String batchId, Job job, TaskResult result,
-            Throwable cause) {
-        var hash = batchId.hashCode();
-        var notifier = this.notifiers[hash % this.notifiers.length];
-        if (cause == null)
-            return notifier.submit(() -> notifyJobComplete(batchId, job, result));
-        return notifier.submit(() -> notifyJobFailure(batchId, job, cause, null));
-    }
-
-    protected Promise<TaskResult, Throwable> notifyJobFailure(String batchId, Job job, Throwable ex,
-            TaskResult result) {
+    @Override
+    public Promise<TaskResult, Throwable> notifyJobFailure(String batchId, Job job, Throwable ex, TaskResult result) {
         var batchExecution = executionMap.get(batchId);
         batchExecution.completeJob(job, new FailedTaskResult(job.getTaskTopo().getTaskId(), ex, result));
         return Promise.ofCause(ex);
     }
 
-    protected Promise<TaskResult, Throwable> notifyJobComplete(String batchId, Job job, TaskResult result) {
+    @Override
+    public Promise<TaskResult, Throwable> notifyJobComplete(String batchId, Job job, TaskResult result) {
         if (result == null)
             result = new DefaultTaskResult(job.getTaskTopo().getTaskId(), null);
         if (!result.isSuccessful()) {
@@ -107,9 +96,7 @@ public class PooledTaskRunner implements TaskRunner {
 
     @Override
     public void stop() {
-        for (var notifier : notifiers) {
-            notifier.shutdownNow();
-        }
+        router.stop();
         pool.shutdownNow();
     }
 }

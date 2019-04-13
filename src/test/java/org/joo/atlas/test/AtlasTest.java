@@ -8,6 +8,7 @@ import org.joo.atlas.models.Task;
 import org.joo.atlas.tasks.impl.DAGTaskSorter;
 import org.joo.atlas.tasks.impl.DefaultTaskMapper;
 import org.joo.atlas.tasks.impl.DefaultTaskSubmitter;
+import org.joo.atlas.tasks.impl.HashedTaskRouter;
 import org.joo.atlas.tasks.impl.PooledTaskRunner;
 import org.junit.Assert;
 import org.junit.Test;
@@ -16,8 +17,9 @@ public class AtlasTest {
 
     @Test
     public void testGraph() throws InterruptedException {
+        var taskRouter = new HashedTaskRouter(2);
         var taskMapper = new DefaultTaskMapper().with("test-task", PrintTaskJob::new);
-        var submitter = new DefaultTaskSubmitter(new DAGTaskSorter(), new PooledTaskRunner(16, 2), taskMapper);
+        var submitter = new DefaultTaskSubmitter(new DAGTaskSorter(), new PooledTaskRunner(16, taskRouter), taskMapper);
         var batch = Batch.of("test", //
                 Task.of("4", "task4", "test-task", new String[] { "6" }, 100L),
                 Task.of("2", "task2", "test-task", new String[] { "3" }, 100L),
