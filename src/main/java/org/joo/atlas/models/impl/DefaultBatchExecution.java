@@ -8,6 +8,8 @@ import org.joo.atlas.models.Batch;
 import org.joo.atlas.models.BatchExecution;
 import org.joo.atlas.models.Job;
 import org.joo.atlas.models.TaskResult;
+import org.joo.atlas.models.impl.results.BatchTaskResult;
+import org.joo.atlas.models.impl.results.CanceledTaskResult;
 import org.joo.promise4j.Deferred;
 
 import lombok.Getter;

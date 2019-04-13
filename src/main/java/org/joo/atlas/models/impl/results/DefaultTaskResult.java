@@ -1,4 +1,4 @@
-package org.joo.atlas.models.impl;
+package org.joo.atlas.models.impl.results;
 
 import org.joo.atlas.models.TaskResult;
 import org.joo.atlas.models.TaskResultStatus;

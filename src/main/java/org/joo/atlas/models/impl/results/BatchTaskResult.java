@@ -1,4 +1,4 @@
-package org.joo.atlas.models.impl;
+package org.joo.atlas.models.impl.results;
 
 import java.util.Map;
 import java.util.Optional;

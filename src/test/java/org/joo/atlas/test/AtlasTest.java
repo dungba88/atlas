@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import org.joo.atlas.models.Batch;
 import org.joo.atlas.models.Task;
 import org.joo.atlas.models.TaskResult;
-import org.joo.atlas.models.impl.BatchTaskResult;
+import org.joo.atlas.models.impl.results.BatchTaskResult;
 import org.joo.atlas.support.exceptions.CyclicGraphDetectedException;
 import org.joo.atlas.tasks.impl.DefaultTaskMapper;
 import org.joo.atlas.tasks.impl.DefaultTaskSubmitter;
