@@ -38,37 +38,17 @@ public class PooledTaskRunner implements TaskRunner, TaskNotifier {
         var deferred = new CompletableDeferredObject<TaskResult, Throwable>();
         var batchExecution = new DefaultBatchExecution(deferred, batch);
         return storage.storeBatchExecution(batch.getId(), batchExecution).then(r -> {
-            runBatch(batchExecution);
+            router.routeBatch(this, batch.getId());
             return deferred.promise();
         });
     }
 
-    private void runBatch(BatchExecution batchExecution) {
-        var batch = batchExecution.getBatch();
-        var batchId = batch.getId();
-        var jobs = batch.getBatch();
-        runJobs(batchExecution, batchId, jobs);
-    }
-
-    protected void runJobs(BatchExecution batchExecution, String batchId, Job[] jobs) {
-        for (var job : jobs) {
-            if (!batchExecution.canRun(job))
-                continue;
-            pool.submit(() -> {
-                runJob(batchId, job);
-            });
-        }
-    }
-
-    protected void runJob(String batchId, Job job) {
-        try {
-            var context = new DefaultExecutionContext(batchId, job.getTaskTopo().getTask().getTaskArguments());
-            job.run(context) //
-               .then(result -> router.notifyJob(this, batchId, job, result, null))//
-               .fail(ex -> router.notifyJob(this, batchId, job, null, ex));
-        } catch (Exception ex) {
-            router.notifyJob(this, batchId, job, null, ex);
-        }
+    @Override
+    public Promise<Object, Throwable> notifyBatchStart(String batchId) {
+        return storage.fetchBatchExecution(batchId).then(batchExecution -> {
+            runJobs(batchExecution, batchId, batchExecution.getBatch().getBatch());
+            return Promise.of(null);
+        });
     }
 
     @Override
@@ -92,6 +72,27 @@ public class PooledTaskRunner implements TaskRunner, TaskNotifier {
             runChildJobs(batchId, job, batchExecution);
             return Promise.of(theResult);
         });
+    }
+
+    protected void runJobs(BatchExecution batchExecution, String batchId, Job[] jobs) {
+        for (var job : jobs) {
+            if (!batchExecution.canRun(job))
+                continue;
+            pool.submit(() -> {
+                runJob(batchId, job);
+            });
+        }
+    }
+
+    protected void runJob(String batchId, Job job) {
+        try {
+            var context = new DefaultExecutionContext(batchId, job.getTaskTopo().getTask().getTaskArguments());
+            job.run(context) //
+               .then(result -> router.routeJob(this, batchId, job, result, null))//
+               .fail(ex -> router.routeJob(this, batchId, job, null, ex));
+        } catch (Exception ex) {
+            router.routeJob(this, batchId, job, null, ex);
+        }
     }
 
     protected void runChildJobs(String batchId, Job job, BatchExecution batchExecution) {

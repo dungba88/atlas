@@ -10,4 +10,5 @@ public interface TaskNotifier {
 
     Promise<TaskResult, Throwable> notifyJobFailure(String batchId, Job job, Throwable ex, TaskResult result);
 
+    Promise<Object, Throwable>  notifyBatchStart(String batchId);
 }

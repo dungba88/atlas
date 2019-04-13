@@ -8,6 +8,8 @@ public interface TaskRouter {
 
     void stop();
 
-    Promise<Object, Throwable> notifyJob(TaskNotifier notifier, String routingKey, Job job, TaskResult result,
+    Promise<Object, Throwable> routeJob(TaskNotifier notifier, String routingKey, Job job, TaskResult result,
             Throwable cause);
+
+    Promise<Object, Throwable> routeBatch(TaskNotifier notifier, String batchId);
 }

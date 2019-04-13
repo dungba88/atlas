@@ -21,10 +21,9 @@ public class HashedTaskRouter implements TaskRouter {
     }
 
     @Override
-    public Promise<Object, Throwable> notifyJob(TaskNotifier notifier, String routingKey, Job job, TaskResult result,
+    public Promise<Object, Throwable> routeJob(TaskNotifier notifier, String routingKey, Job job, TaskResult result,
             Throwable cause) {
-        var hash = routingKey.hashCode();
-        var router = this.routers[hash % this.routers.length];
+        var router = findRouter(routingKey);
         if (cause == null) {
             router.submit(() -> notifier.notifyJobComplete(routingKey, job, result));
         } else {
@@ -38,5 +37,18 @@ public class HashedTaskRouter implements TaskRouter {
         for (var router : routers) {
             router.shutdownNow();
         }
+    }
+
+    @Override
+    public Promise<Object, Throwable> routeBatch(TaskNotifier notifier, String batchId) {
+        var router = findRouter(batchId);
+        router.submit(() -> notifier.notifyBatchStart(batchId));
+        return Promise.of(null);
+    }
+
+    protected ExecutorService findRouter(String routingKey) {
+        var hash = routingKey.hashCode();
+        var router = this.routers[hash % this.routers.length];
+        return router;
     }
 }
