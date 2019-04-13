@@ -7,5 +7,5 @@ import org.joo.promise4j.Promise;
 
 public interface TaskSorter {
 
-    Promise<Batch<TaskTopo>, Exception> sortTasks(Batch<Task> batch);
+    Promise<Batch<TaskTopo>, Throwable> sortTasks(Batch<Task> batch);
 }

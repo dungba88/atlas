@@ -11,9 +11,13 @@ import org.joo.promise4j.Promise;
 public class DAGTaskSorter implements TaskSorter {
 
     @Override
-    public Promise<Batch<TaskTopo>, Exception> sortTasks(Batch<Task> batch) {
-        var sorter = new DFSTopoSorting(batch.getBatch());
-        var sortedTasks = sorter.sort().topo();
-        return Promise.of(new DefaultBatch<>(batch.getId(), sortedTasks));
+    public Promise<Batch<TaskTopo>, Throwable> sortTasks(Batch<Task> batch) {
+        try {
+            var sorter = new DFSTopoSorting(batch.getBatch());
+            var sortedTasks = sorter.sort().topo();
+            return Promise.of(new DefaultBatch<>(batch.getId(), sortedTasks));
+        } catch (Exception ex) {
+            return Promise.ofCause(ex);
+        }
     }
 }
