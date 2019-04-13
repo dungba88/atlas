@@ -1,4 +1,4 @@
-package org.joo.atlas.tasks.impl;
+package org.joo.atlas.tasks.impl.storages;
 
 import java.util.Map;
 

@@ -1,4 +1,4 @@
-package org.joo.atlas.tasks.impl;
+package org.joo.atlas.tasks.impl.runners;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
