@@ -1,9 +1,11 @@
 package org.joo.atlas.models.impl;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.joo.atlas.models.TaskResult;
+import org.joo.atlas.models.TaskResultStatus;
 import org.joo.atlas.support.exceptions.BatchException;
 
 import lombok.Getter;
@@ -19,6 +21,8 @@ public class BatchTaskResult implements TaskResult {
 
     private Map<String, TaskResult> result;
 
+    private TaskResultStatus status;
+
     public BatchTaskResult(String id, Map<String, TaskResult> results) {
         this.id = id;
         this.result = results;
@@ -27,11 +31,15 @@ public class BatchTaskResult implements TaskResult {
 
     private void checkForFailure() {
         var failures = result.entrySet().stream() //
-                             .filter(e -> !e.getValue().isSuccessful())
-                             .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().getCause()));
+                             .filter(e -> !e.getValue().isSuccessful()) //
+                             .collect(Collectors.toMap(e -> e.getKey(),
+                                     e -> Optional.ofNullable(e.getValue().getCause())));
         successful = failures.isEmpty();
         if (!successful) {
             cause = new BatchException(failures);
+            status = TaskResultStatus.FAILED;
+        } else {
+            status = TaskResultStatus.FINISHED;
         }
     }
 }

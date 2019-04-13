@@ -41,12 +41,22 @@ public class DefaultBatchExecution implements BatchExecution {
         if (depended.length == 0)
             return true;
         return Arrays.stream(depended) //
-                     .allMatch(completedJobs::containsKey);
+                     .allMatch(this::hasCompleted);
+    }
+
+    private boolean hasCompleted(String task) {
+        return completedJobs.containsKey(task) && completedJobs.get(task).isSuccessful();
     }
 
     @Override
     public void completeJob(Job job, TaskResult result) {
         completedJobs.put(job.getTaskTopo().getTaskId(), result);
+        // canceled children of failed task
+        if (!result.isSuccessful()) {
+            for (var child : job.getTaskTopo().getDependantTasks()) {
+                completeJob(taskMap.get(child), new CanceledTaskResult(child));
+            }
+        }
         checkComplete();
     }
 

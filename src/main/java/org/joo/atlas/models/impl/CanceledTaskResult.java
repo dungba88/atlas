@@ -4,21 +4,14 @@ import org.joo.atlas.models.TaskResult;
 import org.joo.atlas.models.TaskResultStatus;
 
 import lombok.Getter;
-import lombok.NonNull;
 
 @Getter
-public class FailedTaskResult implements TaskResult {
+public class CanceledTaskResult implements TaskResult {
 
     private String id;
 
-    private Throwable cause;
-
-    private TaskResult result;
-
-    public FailedTaskResult(String id, @NonNull Throwable cause, TaskResult result) {
+    public CanceledTaskResult(String id) {
         this.id = id;
-        this.cause = cause;
-        this.result = result;
     }
 
     @Override
@@ -28,11 +21,21 @@ public class FailedTaskResult implements TaskResult {
 
     @Override
     public TaskResultStatus getStatus() {
-        return TaskResultStatus.FAILED;
+        return TaskResultStatus.CANCELED;
+    }
+
+    @Override
+    public Throwable getCause() {
+        return null;
+    }
+
+    @Override
+    public Object getResult() {
+        return null;
     }
 
     @Override
     public String toString() {
-        return "Task failed with exception [" + cause + "]";
+        return "Task canceled";
     }
 }

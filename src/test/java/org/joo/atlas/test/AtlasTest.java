@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import org.joo.atlas.models.Batch;
 import org.joo.atlas.models.Task;
 import org.joo.atlas.models.TaskResult;
+import org.joo.atlas.models.impl.BatchTaskResult;
 import org.joo.atlas.support.exceptions.CyclicGraphDetectedException;
 import org.joo.atlas.tasks.impl.DefaultTaskMapper;
 import org.joo.atlas.tasks.impl.DefaultTaskSubmitter;
@@ -45,6 +46,28 @@ public class AtlasTest {
                 Task.of("6", "task6", "test-task", new String[] { "1" }, 100L), //
                 Task.of("8", "task8", "test-task", new String[0], 500L));
         return batch;
+    }
+
+    @Test
+    public void testRandomFailure() throws InterruptedException, PromiseException {
+        var taskRouter = new HashedTaskRouter(2);
+        var taskMapper = new DefaultTaskMapper().with("test-task", FailTaskJob::new);
+        var submitter = new DefaultTaskSubmitter(new PooledTaskRunner(16, taskRouter), taskMapper);
+
+        var promises = new ArrayList<Promise<TaskResult, Throwable>>();
+        for (var i = 0; i < 10; i++) {
+            var batch = createBatch("test" + i);
+            var promise = submitter.submitTasks(batch);
+            promises.add(promise);
+        }
+
+        var results = Promise.all(promises).get();
+        for (var result : results) {
+            var batchResult = (BatchTaskResult) result;
+            System.out.println(batchResult.getResult());
+        }
+
+        submitter.stop();
     }
 
     @Test
