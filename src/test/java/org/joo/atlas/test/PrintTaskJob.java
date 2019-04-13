@@ -1,4 +1,4 @@
-package org.joo.atlas;
+package org.joo.atlas.test;
 
 import org.joo.atlas.models.Job;
 import org.joo.atlas.models.TaskResult;

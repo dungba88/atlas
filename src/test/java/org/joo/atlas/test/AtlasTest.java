@@ -1,4 +1,4 @@
-package org.joo.atlas;
+package org.joo.atlas.test;
 
 import java.util.concurrent.CountDownLatch;
 
@@ -9,7 +9,7 @@ import org.joo.atlas.tasks.impl.DefaultTaskMapper;
 import org.joo.atlas.tasks.impl.DefaultTaskSubmitter;
 import org.joo.atlas.tasks.impl.PooledTaskRunner;
 
-public class Atlas {
+public class AtlasTest {
 
     public static void main(String[] args) throws InterruptedException {
         var taskMapper = new DefaultTaskMapper().with("test-task", PrintTaskJob::new);
