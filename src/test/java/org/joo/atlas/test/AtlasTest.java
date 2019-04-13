@@ -10,6 +10,7 @@ import org.joo.atlas.support.exceptions.CyclicGraphDetectedException;
 import org.joo.atlas.tasks.impl.DefaultTaskMapper;
 import org.joo.atlas.tasks.impl.DefaultTaskSubmitter;
 import org.joo.atlas.tasks.impl.HashedTaskRouter;
+import org.joo.atlas.tasks.impl.MemBasedTaskStorage;
 import org.joo.atlas.tasks.impl.PooledTaskRunner;
 import org.joo.promise4j.Promise;
 import org.joo.promise4j.PromiseException;
@@ -20,16 +21,21 @@ public class AtlasTest {
 
     @Test
     public void testCircularDependency() throws PromiseException, InterruptedException {
-        var taskRouter = new HashedTaskRouter(2);
         var taskMapper = new DefaultTaskMapper().with("test-task", PrintTaskJob::new);
-        var submitter = new DefaultTaskSubmitter(new PooledTaskRunner(16, taskRouter), taskMapper);
+        var taskStorage = new MemBasedTaskStorage();
+        var taskRouter = new HashedTaskRouter(2);
+        var taskRunner = new PooledTaskRunner(16, taskRouter, taskStorage);
+        var submitter = new DefaultTaskSubmitter(taskRunner, taskMapper);
 
         var batch = createBatchWithCircularDependency();
 
         try {
             submitter.submitTasks(batch).get();
             Assert.fail("must fail with cyclic graph detected exception");
-        } catch (CyclicGraphDetectedException ex) {
+        } catch (PromiseException ex) {
+            if (!(ex.getCause() instanceof CyclicGraphDetectedException)) {
+                Assert.fail(ex.getCause().getMessage());
+            }
         }
 
         submitter.stop();
@@ -50,9 +56,11 @@ public class AtlasTest {
 
     @Test
     public void testRandomFailure() throws InterruptedException, PromiseException {
-        var taskRouter = new HashedTaskRouter(2);
         var taskMapper = new DefaultTaskMapper().with("test-task", FailTaskJob::new);
-        var submitter = new DefaultTaskSubmitter(new PooledTaskRunner(16, taskRouter), taskMapper);
+        var taskStorage = new MemBasedTaskStorage();
+        var taskRouter = new HashedTaskRouter(2);
+        var taskRunner = new PooledTaskRunner(16, taskRouter, taskStorage);
+        var submitter = new DefaultTaskSubmitter(taskRunner, taskMapper);
 
         var promises = new ArrayList<Promise<TaskResult, Throwable>>();
         for (var i = 0; i < 10; i++) {
@@ -72,9 +80,11 @@ public class AtlasTest {
 
     @Test
     public void testGraph() throws InterruptedException, PromiseException {
-        var taskRouter = new HashedTaskRouter(2);
         var taskMapper = new DefaultTaskMapper().with("test-task", PrintTaskJob::new);
-        var submitter = new DefaultTaskSubmitter(new PooledTaskRunner(16, taskRouter), taskMapper);
+        var taskStorage = new MemBasedTaskStorage();
+        var taskRouter = new HashedTaskRouter(2);
+        var taskRunner = new PooledTaskRunner(16, taskRouter, taskStorage);
+        var submitter = new DefaultTaskSubmitter(taskRunner, taskMapper);
 
         var promises = new ArrayList<Promise<TaskResult, Throwable>>();
         for (var i = 0; i < 5; i++) {

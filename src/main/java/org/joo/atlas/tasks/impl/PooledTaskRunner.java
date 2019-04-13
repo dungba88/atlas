@@ -1,8 +1,6 @@
 package org.joo.atlas.tasks.impl;
 
 import java.util.Arrays;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 
@@ -17,29 +15,32 @@ import org.joo.atlas.models.impl.FailedTaskResult;
 import org.joo.atlas.tasks.TaskNotifier;
 import org.joo.atlas.tasks.TaskRouter;
 import org.joo.atlas.tasks.TaskRunner;
+import org.joo.atlas.tasks.TaskStorage;
 import org.joo.promise4j.Promise;
 import org.joo.promise4j.impl.CompletableDeferredObject;
 
 public class PooledTaskRunner implements TaskRunner, TaskNotifier {
 
-    private Map<String, BatchExecution> executionMap = new ConcurrentHashMap<>();
+    private TaskStorage storage;
 
     private ExecutorService pool;
 
     private TaskRouter router;
 
-    public PooledTaskRunner(int workerThreads, TaskRouter router) {
+    public PooledTaskRunner(int workerThreads, TaskRouter router, TaskStorage storage) {
         this.pool = new ForkJoinPool(workerThreads);
         this.router = router;
+        this.storage = storage;
     }
 
     @Override
     public Promise<TaskResult, Throwable> runTasks(Batch<Job> batch) {
         var deferred = new CompletableDeferredObject<TaskResult, Throwable>();
         var batchExecution = new DefaultBatchExecution(deferred, batch);
-        executionMap.put(batch.getId(), batchExecution);
-        runBatch(batchExecution);
-        return deferred.promise();
+        return storage.storeBatchExecution(batch.getId(), batchExecution).then(r -> {
+            runBatch(batchExecution);
+            return deferred.promise();
+        });
     }
 
     private void runBatch(BatchExecution batchExecution) {
@@ -72,9 +73,10 @@ public class PooledTaskRunner implements TaskRunner, TaskNotifier {
 
     @Override
     public Promise<TaskResult, Throwable> notifyJobFailure(String batchId, Job job, Throwable ex, TaskResult result) {
-        var batchExecution = executionMap.get(batchId);
-        batchExecution.completeJob(job, new FailedTaskResult(job.getTaskTopo().getTaskId(), ex, result));
-        return Promise.ofCause(ex);
+        return storage.fetchBatchExecution(batchId).then(be -> {
+            be.completeJob(job, new FailedTaskResult(job.getTaskTopo().getTaskId(), ex, result));
+            return Promise.ofCause(ex);
+        });
     }
 
     @Override
@@ -84,16 +86,19 @@ public class PooledTaskRunner implements TaskRunner, TaskNotifier {
         if (!result.isSuccessful()) {
             return notifyJobFailure(batchId, job, result.getCause(), result);
         }
-        var batchExecution = executionMap.get(batchId);
-        batchExecution.completeJob(job, result);
+        var theResult = result;
+        return storage.fetchBatchExecution(batchId).then(batchExecution -> {
+            batchExecution.completeJob(job, theResult);
+            runChildJobs(batchId, job, batchExecution);
+            return Promise.of(theResult);
+        });
+    }
 
+    protected void runChildJobs(String batchId, Job job, BatchExecution batchExecution) {
         var jobs = Arrays.stream(job.getTaskTopo().getDependantTasks()) //
                          .map(batchExecution::mapTask) //
                          .toArray(size -> new Job[size]);
-
         runJobs(batchExecution, batchId, jobs);
-
-        return Promise.of(result);
     }
 
     @Override
