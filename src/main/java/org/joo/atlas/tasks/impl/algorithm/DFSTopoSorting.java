@@ -48,12 +48,32 @@ public class DFSTopoSorting {
             visit(task);
         }
 
-        buildGroups();
+        assignGroup();
 
         return this;
     }
 
-    private void buildGroups() {
+     void visit(Task task) {
+        var id = task.getId();
+
+        if (permMarks.contains(id))
+            return;
+        if (tmpMarks.contains(id))
+            throw new CyclicGraphDetected(id);
+
+        tmpMarks.add(id);
+
+        for (var adj : task.getDependants()) {
+            visit(taskMap.get(adj));
+        }
+
+        tmpMarks.remove(id);
+        permMarks.add(id);
+
+        results.addFirst(task);
+    }
+
+    private void assignGroup() {
         this.groupMap = new HashMap<>();
         for (var task : tasks) {
             groupMap.put(task.getId(), 0);
@@ -97,25 +117,5 @@ public class DFSTopoSorting {
                        .sorted((e1, e2) -> e1.getKey() - e2.getKey()) //
                        .map(e -> e.getValue().toArray(new Task[0])) //
                        .toArray(size -> new Task[size][]);
-    }
-
-    protected void visit(Task task) {
-        var id = task.getId();
-
-        if (permMarks.contains(id))
-            return;
-        if (tmpMarks.contains(id))
-            throw new CyclicGraphDetected(id);
-
-        tmpMarks.add(id);
-
-        for (var adj : task.getDependants()) {
-            visit(taskMap.get(adj));
-        }
-
-        tmpMarks.remove(id);
-        permMarks.add(id);
-
-        results.addFirst(task);
     }
 }
