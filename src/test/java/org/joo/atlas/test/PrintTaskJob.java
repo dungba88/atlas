@@ -1,5 +1,6 @@
 package org.joo.atlas.test;
 
+import org.joo.atlas.models.ExecutionContext;
 import org.joo.atlas.models.Job;
 import org.joo.atlas.models.TaskResult;
 import org.joo.atlas.models.TaskTopo;
@@ -17,14 +18,14 @@ public class PrintTaskJob implements Job {
     }
 
     @Override
-    public Promise<TaskResult, Exception> run(Object[] args) {
-        System.out.println("Running task [" + taskTopo.getTaskId() + "]");
+    public Promise<TaskResult, Exception> run(ExecutionContext context) {
+        System.out.println("Running task [" + context.getBatchId() + " - " + taskTopo.getTaskId() + "]");
         try {
-            Thread.sleep((long) args[0]);
+            Thread.sleep((long) (Math.random() * (long) context.getArgs()[0]));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-        System.out.println("Finish task [" + taskTopo.getTaskId() + "]");
+//        System.out.println("Finish task [" + context.getBatchId() + " - " + taskTopo.getTaskId() + "]");
         return Promise.of(null);
     }
 }

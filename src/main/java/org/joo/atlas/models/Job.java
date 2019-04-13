@@ -6,5 +6,5 @@ public interface Job {
 
     TaskTopo getTaskTopo();
 
-    Promise<TaskResult, Exception> run(Object[] args);
+    Promise<TaskResult, Exception> run(ExecutionContext context);
 }

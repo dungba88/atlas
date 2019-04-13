@@ -11,6 +11,7 @@ import org.joo.atlas.models.BatchExecution;
 import org.joo.atlas.models.Job;
 import org.joo.atlas.models.TaskResult;
 import org.joo.atlas.models.impl.DefaultBatchExecution;
+import org.joo.atlas.models.impl.DefaultExecutionContext;
 import org.joo.atlas.models.impl.DefaultTaskResult;
 import org.joo.atlas.models.impl.FailedTaskResult;
 import org.joo.atlas.tasks.TaskNotifier;
@@ -60,7 +61,8 @@ public class PooledTaskRunner implements TaskRunner, TaskNotifier {
 
     protected void runJob(String batchId, Job job) {
         try {
-            job.run(job.getTaskTopo().getTask().getTaskArguments()) //
+            var context = new DefaultExecutionContext(batchId, job.getTaskTopo().getTask().getTaskArguments());
+            job.run(context) //
                .then(result -> router.notifyJob(this, batchId, job, result, null))//
                .fail(ex -> router.notifyJob(this, batchId, job, null, ex));
         } catch (Exception ex) {

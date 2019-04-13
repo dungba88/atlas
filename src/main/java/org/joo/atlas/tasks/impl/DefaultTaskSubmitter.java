@@ -24,7 +24,7 @@ public class DefaultTaskSubmitter implements TaskSubmitter {
     private final TaskRunner taskRunner;
 
     private final TaskMapper taskMapper;
-    
+
     public DefaultTaskSubmitter(TaskRunner taskRunner, TaskMapper taskMapper) {
         this(new DAGTaskSorter(), taskRunner, taskMapper);
     }
