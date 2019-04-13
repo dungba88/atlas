@@ -73,7 +73,7 @@ public class PooledTaskRunner implements TaskRunner {
 
     protected Future<Promise<TaskResult, Throwable>> notifyJob(String batchId, Job job, TaskResult result,
             Throwable cause) {
-        var hash = job.getTaskTopo().getTaskId().hashCode();
+        var hash = batchId.hashCode();
         var notifier = this.notifiers[hash % this.notifiers.length];
         if (cause == null)
             return notifier.submit(() -> notifyJobComplete(batchId, job, result));
