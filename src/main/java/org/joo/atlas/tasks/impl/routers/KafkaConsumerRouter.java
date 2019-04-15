@@ -37,6 +37,10 @@ public class KafkaConsumerRouter extends NonameComponentLifecycle {
 
     private void processMessage(Message msg, Deferred<Message, Exception> deferred) {
         var batchId = msg.headers().getString(KafkaConstants.KEY);
+        if (msg.body().isNullValue()) {
+            notifier.notifyBatchStart(batchId);
+            return;
+        }
         var body = msg.body().asObject();
         var taskId = body.getString("taskId");
         var result = body.getObject("taskResult");
