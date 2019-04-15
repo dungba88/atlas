@@ -11,6 +11,8 @@ import lombok.Getter;
 @Getter
 public class FailTaskJob implements Job {
 
+    private static final long serialVersionUID = -4403082105580281768L;
+
     private TaskTopo taskTopo;
 
     public FailTaskJob(TaskTopo taskTopo) {

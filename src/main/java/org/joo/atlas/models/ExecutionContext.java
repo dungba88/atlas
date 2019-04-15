@@ -1,8 +1,11 @@
 package org.joo.atlas.models;
 
-public interface ExecutionContext {
+import java.io.Serializable;
+import java.util.Map;
+
+public interface ExecutionContext extends Serializable {
 
     public String getBatchId();
 
-    public Object[] getArgs();
+    public Map<String, Object> getContextData();
 }

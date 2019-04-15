@@ -10,6 +10,8 @@ import lombok.Getter;
 @AllArgsConstructor
 public class DefaultTaskTopo implements TaskTopo {
 
+    private static final long serialVersionUID = -2770341704324132548L;
+
     private Task task;
     
     private int taskGroup;

@@ -1,9 +1,10 @@
-package org.joo.atlas.tasks.impl.runners;
+package org.joo.atlas.tasks.impl.queue;
 
 import java.util.Arrays;
 
 import org.joo.atlas.models.Batch;
 import org.joo.atlas.models.BatchExecution;
+import org.joo.atlas.models.ExecutionContext;
 import org.joo.atlas.models.Job;
 import org.joo.atlas.models.TaskResult;
 import org.joo.atlas.models.impl.DefaultBatchExecution;
@@ -11,19 +12,20 @@ import org.joo.atlas.models.impl.DefaultExecutionContext;
 import org.joo.atlas.models.impl.results.DefaultTaskResult;
 import org.joo.atlas.models.impl.results.FailedTaskResult;
 import org.joo.atlas.tasks.TaskNotifier;
+import org.joo.atlas.tasks.TaskQueue;
 import org.joo.atlas.tasks.TaskRouter;
-import org.joo.atlas.tasks.TaskRunner;
 import org.joo.atlas.tasks.TaskStorage;
+import org.joo.atlas.tasks.impl.AbstractComponent;
 import org.joo.promise4j.Promise;
 import org.joo.promise4j.impl.CompletableDeferredObject;
 
-public abstract class AbstractTaskRunner implements TaskRunner, TaskNotifier {
+public abstract class AbstractTaskQueue extends AbstractComponent implements TaskQueue, TaskNotifier {
 
     private TaskStorage storage;
 
     private TaskRouter router;
 
-    public AbstractTaskRunner(TaskRouter router, TaskStorage storage) {
+    public AbstractTaskQueue(TaskRouter router, TaskStorage storage) {
         this.router = router;
         this.storage = storage;
     }
@@ -73,21 +75,15 @@ public abstract class AbstractTaskRunner implements TaskRunner, TaskNotifier {
         for (var job : jobs) {
             if (!batchExecution.canRun(job))
                 continue;
-            doRunJob(() -> {
-                runJob(batchId, job);
-            });
+            var context = new DefaultExecutionContext(batchId, job.getTaskTopo().getTask().getTaskData());
+            runJob(job, context);
         }
     }
 
-    protected void runJob(String batchId, Job job) {
-        try {
-            var context = new DefaultExecutionContext(batchId, job.getTaskTopo().getTask().getTaskArguments());
-            job.run(context) //
-               .then(result -> router.routeJob(this, batchId, job, result, null))//
-               .fail(ex -> router.routeJob(this, batchId, job, null, ex));
-        } catch (Exception ex) {
-            router.routeJob(this, batchId, job, null, ex);
-        }
+    protected void runJob(Job job, ExecutionContext context) {
+        var batchId = context.getBatchId();
+        doRunJob(job, context).then(result -> router.routeJob(this, batchId, job, result, null)) //
+                              .fail(ex -> router.routeJob(this, batchId, job, null, ex));
     }
 
     protected void runChildJobs(String batchId, Job job, BatchExecution batchExecution) {
@@ -98,9 +94,9 @@ public abstract class AbstractTaskRunner implements TaskRunner, TaskNotifier {
     }
 
     @Override
-    public void stop() {
+    protected void onStop() {
         router.stop();
     }
 
-    protected abstract void doRunJob(Runnable runnable);
+    protected abstract Promise<TaskResult, Exception> doRunJob(Job job, ExecutionContext context);
 }

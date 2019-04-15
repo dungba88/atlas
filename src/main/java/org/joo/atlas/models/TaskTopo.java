@@ -1,6 +1,8 @@
 package org.joo.atlas.models;
 
-public interface TaskTopo {
+import java.io.Serializable;
+
+public interface TaskTopo extends Serializable {
 
     String getTaskId();
 

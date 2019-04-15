@@ -7,9 +7,12 @@ import org.joo.atlas.models.Job;
 import org.joo.atlas.models.TaskResult;
 import org.joo.atlas.tasks.TaskNotifier;
 import org.joo.atlas.tasks.TaskRouter;
+import org.joo.atlas.tasks.impl.AbstractComponent;
 import org.joo.promise4j.Promise;
 
-public class HashedTaskRouter implements TaskRouter {
+public class HashedTaskRouter extends AbstractComponent implements TaskRouter {
+
+    private static final long serialVersionUID = 3542951723310626472L;
 
     private ExecutorService[] routers;
 
@@ -33,7 +36,7 @@ public class HashedTaskRouter implements TaskRouter {
     }
 
     @Override
-    public void stop() {
+    protected void onStop() {
         for (var router : routers) {
             router.shutdownNow();
         }
