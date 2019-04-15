@@ -48,7 +48,6 @@ public class HashedTaskRouter implements TaskRouter {
 
     protected ExecutorService findRouter(String routingKey) {
         var hash = routingKey.hashCode();
-        var router = this.routers[hash % this.routers.length];
-        return router;
+        return this.routers[hash % this.routers.length];
     }
 }
