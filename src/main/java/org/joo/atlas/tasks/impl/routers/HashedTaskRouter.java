@@ -27,7 +27,8 @@ public class HashedTaskRouter extends NonameComponentLifecycle implements TaskRo
     @Override
     public Promise<Object, Throwable> routeJob(TaskNotifier notifier, String routingKey, Job job, TaskResult result) {
         var router = findRouter(routingKey);
-        router.submit(() -> notifier.notifyJobComplete(routingKey, job.getTaskTopo().getTaskId(), result));
+        var taskId = job.getTaskTopo().getTaskId();
+        router.submit(() -> notifier.notifyJobComplete(routingKey, taskId, result));
         return Promise.of(null);
     }
 
