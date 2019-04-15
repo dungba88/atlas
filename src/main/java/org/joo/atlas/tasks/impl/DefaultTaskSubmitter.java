@@ -14,10 +14,11 @@ import org.joo.atlas.tasks.TaskSorter;
 import org.joo.atlas.tasks.TaskSubmitter;
 import org.joo.promise4j.Promise;
 
+import io.gridgo.framework.impl.AbstractComponentLifecycle;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
-public class DefaultTaskSubmitter extends AbstractComponent implements TaskSubmitter {
+public class DefaultTaskSubmitter extends AbstractComponentLifecycle implements TaskSubmitter {
 
     private final TaskSorter taskSorter;
 
@@ -51,5 +52,10 @@ public class DefaultTaskSubmitter extends AbstractComponent implements TaskSubmi
     @Override
     protected void onStop() {
         taskRunner.stop();
+    }
+
+    @Override
+    protected String generateName() {
+        return "tasksubmitter.default";
     }
 }

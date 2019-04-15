@@ -15,11 +15,15 @@ import org.joo.atlas.tasks.TaskNotifier;
 import org.joo.atlas.tasks.TaskQueue;
 import org.joo.atlas.tasks.TaskRouter;
 import org.joo.atlas.tasks.TaskStorage;
-import org.joo.atlas.tasks.impl.AbstractComponent;
 import org.joo.promise4j.Promise;
 import org.joo.promise4j.impl.CompletableDeferredObject;
 
-public abstract class AbstractTaskQueue extends AbstractComponent implements TaskQueue, TaskNotifier {
+import io.gridgo.framework.impl.NonameComponentLifecycle;
+import lombok.AccessLevel;
+import lombok.Getter;
+
+@Getter(AccessLevel.PROTECTED)
+public abstract class AbstractTaskQueue extends NonameComponentLifecycle implements TaskQueue, TaskNotifier {
 
     private TaskStorage storage;
 
@@ -49,23 +53,16 @@ public abstract class AbstractTaskQueue extends AbstractComponent implements Tas
     }
 
     @Override
-    public Promise<TaskResult, Throwable> notifyJobFailure(String batchId, Job job, Throwable ex, TaskResult result) {
-        return storage.fetchBatchExecution(batchId).then(be -> {
-            be.completeJob(job, new FailedTaskResult(job.getTaskTopo().getTaskId(), ex, result));
-            return Promise.ofCause(ex);
-        });
-    }
-
-    @Override
-    public Promise<TaskResult, Throwable> notifyJobComplete(String batchId, Job job, TaskResult result) {
+    public Promise<TaskResult, Throwable> notifyJobComplete(String batchId, String taskId, TaskResult result) {
         if (result == null)
-            result = new DefaultTaskResult(job.getTaskTopo().getTaskId(), null);
-        if (!result.isSuccessful()) {
-            return notifyJobFailure(batchId, job, result.getCause(), result);
-        }
+            result = new DefaultTaskResult(taskId, null);
         var theResult = result;
         return storage.fetchBatchExecution(batchId).then(batchExecution -> {
+            var job = batchExecution.mapTask(taskId);
             batchExecution.completeJob(job, theResult);
+            if (!theResult.isSuccessful()) {
+                return Promise.ofCause(theResult.getCause());
+            }
             runChildJobs(batchId, job, batchExecution);
             return Promise.of(theResult);
         });
@@ -82,8 +79,9 @@ public abstract class AbstractTaskQueue extends AbstractComponent implements Tas
 
     protected void runJob(Job job, ExecutionContext context) {
         var batchId = context.getBatchId();
-        doRunJob(job, context).then(result -> router.routeJob(this, batchId, job, result, null)) //
-                              .fail(ex -> router.routeJob(this, batchId, job, null, ex));
+        var taskId = job.getTaskTopo().getTaskId();
+        doRunJob(job, context).then(result -> router.routeJob(this, batchId, job, result)) //
+                              .fail(ex -> router.routeJob(this, batchId, job, new FailedTaskResult(taskId, ex, null)));
     }
 
     protected void runChildJobs(String batchId, Job job, BatchExecution batchExecution) {
@@ -98,5 +96,7 @@ public abstract class AbstractTaskQueue extends AbstractComponent implements Tas
         router.stop();
     }
 
-    protected abstract Promise<TaskResult, Exception> doRunJob(Job job, ExecutionContext context);
+    protected Promise<TaskResult, Exception> doRunJob(Job job, ExecutionContext context) {
+        return Promise.of(null);
+    }
 }

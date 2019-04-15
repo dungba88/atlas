@@ -49,8 +49,10 @@ public class AtlasTest {
         var batch = Batch.of("circular-batch", //
                 Task.of("4", "task4", "test-task", new String[] { "6" }, Collections.singletonMap("sleepTimeMs", 100L)),
                 Task.of("2", "task2", "test-task", new String[] { "3" }, Collections.singletonMap("sleepTimeMs", 100L)),
-                Task.of("3", "task3", "test-task", new String[] { "4", "5" }, Collections.singletonMap("sleepTimeMs", 100L)),
-                Task.of("1", "task1", "test-task", new String[] { "2", "3" }, Collections.singletonMap("sleepTimeMs", 100L)),
+                Task.of("3", "task3", "test-task", new String[] { "4", "5" },
+                        Collections.singletonMap("sleepTimeMs", 100L)),
+                Task.of("1", "task1", "test-task", new String[] { "2", "3" },
+                        Collections.singletonMap("sleepTimeMs", 100L)),
                 Task.of("5", "task5", "test-task", new String[] { "6" }, Collections.singletonMap("sleepTimeMs", 300L)), //
                 Task.of("7", "task7", "test-task", new String[] { "2" }, Collections.singletonMap("sleepTimeMs", 100L)), //
                 Task.of("6", "task6", "test-task", new String[] { "1" }, Collections.singletonMap("sleepTimeMs", 100L)), //
@@ -65,7 +67,7 @@ public class AtlasTest {
         var taskRouter = new HashedTaskRouter(2);
         var taskRunner = new PooledTaskRunner(16, taskRouter, taskStorage);
         var submitter = new DefaultTaskSubmitter(taskRunner, taskMapper);
-        
+
         submitter.start();
 
         var promises = new ArrayList<Promise<TaskResult, Throwable>>();
@@ -105,10 +107,10 @@ public class AtlasTest {
 
         submitter.stop();
     }
-    
+
     @Test
     public void testHazelcast() throws InterruptedException, PromiseException {
-        var taskMapper = new DefaultTaskMapper().with("test-task", PrintTaskJob::new);
+        var taskMapper = new DefaultTaskMapper().with("test-task", NopTaskJob::new);
         var taskStorage = new MemBasedTaskStorage();
         var taskRouter = new HashedTaskRouter(2);
         var taskRunner = new BlockingHazelcastTaskRunner("default", taskRouter, taskStorage);
@@ -116,14 +118,18 @@ public class AtlasTest {
 
         submitter.start();
 
+        var iterations = 100;
+        var started = System.nanoTime();
         var promises = new ArrayList<Promise<TaskResult, Throwable>>();
-        for (var i = 0; i < 5; i++) {
+        for (var i = 0; i < iterations; i++) {
             var batch = createBatch("test" + i);
             var promise = submitter.submitTasks(batch);
             promises.add(promise);
         }
 
         Promise.all(promises).get();
+        var elapsed = System.nanoTime() - started;
+        System.out.println(elapsed / 1e6 + "ms for " + (iterations * 8) + " tasks");
 
         submitter.stop();
     }
@@ -132,8 +138,10 @@ public class AtlasTest {
         var batch = Batch.of(batchId, //
                 Task.of("4", "task4", "test-task", new String[] { "6" }, Collections.singletonMap("sleepTimeMs", 100L)),
                 Task.of("2", "task2", "test-task", new String[] { "3" }, Collections.singletonMap("sleepTimeMs", 100L)),
-                Task.of("3", "task3", "test-task", new String[] { "4", "5" }, Collections.singletonMap("sleepTimeMs", 100L)),
-                Task.of("1", "task1", "test-task", new String[] { "2", "3" }, Collections.singletonMap("sleepTimeMs", 100L)),
+                Task.of("3", "task3", "test-task", new String[] { "4", "5" },
+                        Collections.singletonMap("sleepTimeMs", 100L)),
+                Task.of("1", "task1", "test-task", new String[] { "2", "3" },
+                        Collections.singletonMap("sleepTimeMs", 100L)),
                 Task.of("5", "task5", "test-task", new String[] { "6" }, Collections.singletonMap("sleepTimeMs", 300L)), //
                 Task.of("7", "task7", "test-task", new String[] { "2" }, Collections.singletonMap("sleepTimeMs", 100L)), //
                 Task.of("6", "task6", "test-task", new String[0], Collections.singletonMap("sleepTimeMs", 100L)), //

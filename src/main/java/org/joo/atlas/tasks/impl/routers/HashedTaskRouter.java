@@ -7,10 +7,11 @@ import org.joo.atlas.models.Job;
 import org.joo.atlas.models.TaskResult;
 import org.joo.atlas.tasks.TaskNotifier;
 import org.joo.atlas.tasks.TaskRouter;
-import org.joo.atlas.tasks.impl.AbstractComponent;
 import org.joo.promise4j.Promise;
 
-public class HashedTaskRouter extends AbstractComponent implements TaskRouter {
+import io.gridgo.framework.impl.NonameComponentLifecycle;
+
+public class HashedTaskRouter extends NonameComponentLifecycle implements TaskRouter {
 
     private static final long serialVersionUID = 3542951723310626472L;
 
@@ -24,14 +25,9 @@ public class HashedTaskRouter extends AbstractComponent implements TaskRouter {
     }
 
     @Override
-    public Promise<Object, Throwable> routeJob(TaskNotifier notifier, String routingKey, Job job, TaskResult result,
-            Throwable cause) {
+    public Promise<Object, Throwable> routeJob(TaskNotifier notifier, String routingKey, Job job, TaskResult result) {
         var router = findRouter(routingKey);
-        if (cause == null) {
-            router.submit(() -> notifier.notifyJobComplete(routingKey, job, result));
-        } else {
-            router.submit(() -> notifier.notifyJobFailure(routingKey, job, cause, null));
-        }
+        router.submit(() -> notifier.notifyJobComplete(routingKey, job.getTaskTopo().getTaskId(), result));
         return Promise.of(null);
     }
 
@@ -51,6 +47,11 @@ public class HashedTaskRouter extends AbstractComponent implements TaskRouter {
 
     protected ExecutorService findRouter(String routingKey) {
         var hash = routingKey.hashCode();
-        return this.routers[hash % this.routers.length];
+        return this.routers[Math.abs(hash % this.routers.length)];
+    }
+
+    @Override
+    protected void onStart() {
+        // Nothing to do here
     }
 }

@@ -1,5 +1,7 @@
 package org.joo.atlas.tasks.impl.queue;
 
+import java.util.concurrent.CompletableFuture;
+
 import org.joo.atlas.models.ExecutionContext;
 import org.joo.atlas.models.Job;
 import org.joo.atlas.models.TaskResult;
@@ -7,6 +9,7 @@ import org.joo.atlas.support.exceptions.ExecutionException;
 import org.joo.atlas.tasks.TaskRouter;
 import org.joo.atlas.tasks.TaskStorage;
 import org.joo.promise4j.Promise;
+import org.joo.promise4j.impl.CompletableDeferredObject;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -30,17 +33,24 @@ public class BlockingHazelcastTaskRunner extends AbstractTaskQueue {
         hzcJob.setContext(context);
         hzcJob.setJob(job);
 
-        var future = pool.submit(hzcJob);
-        try {
-            return Promise.of(future.get());
-        } catch (InterruptedException | ExecutionException | java.util.concurrent.ExecutionException e) {
-            throw new ExecutionException("Exception caught while running task on Hazelcast", e);
-        }
+        var completableFuture = CompletableFuture.supplyAsync(() -> {
+            try {
+                return pool.submit(hzcJob).get();
+            } catch (InterruptedException | java.util.concurrent.ExecutionException e) {
+                throw new ExecutionException("Exception caught while trying to execute task with Hazelcast", e);
+            }
+        });
+        return new CompletableDeferredObject<>(completableFuture);
     }
 
     @Override
     public void onStop() {
         super.onStop();
         pool.shutdownNow();
+    }
+
+    @Override
+    protected void onStart() {
+        // Nothing to do here
     }
 }

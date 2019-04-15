@@ -119,6 +119,11 @@
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/com.hazelcast/hazelcast -->
 		<dependency>
+			<groupId>io.gridgo</groupId>
+			<artifactId>gridgo-kafka</artifactId>
+			<version>0.6.0-SNAPSHOT</version>
+		</dependency>
+		<dependency>
 			<groupId>com.hazelcast</groupId>
 			<artifactId>hazelcast</artifactId>
 			<version>3.12</version>

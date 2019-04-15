@@ -8,8 +8,7 @@ import org.joo.promise4j.Promise;
 
 public interface TaskRouter extends Serializable, Component {
 
-    Promise<Object, Throwable> routeJob(TaskNotifier notifier, String routingKey, Job job, TaskResult result,
-            Throwable cause);
+    Promise<Object, Throwable> routeJob(TaskNotifier notifier, String routingKey, Job job, TaskResult result);
 
     Promise<Object, Throwable> routeBatch(TaskNotifier notifier, String batchId);
 }

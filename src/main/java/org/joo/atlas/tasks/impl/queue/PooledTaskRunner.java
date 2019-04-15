@@ -34,4 +34,9 @@ public class PooledTaskRunner extends AbstractTaskQueue {
         super.onStop();
         pool.shutdownNow();
     }
+
+    @Override
+    protected void onStart() {
+        // Nothing to do here
+    }
 }
