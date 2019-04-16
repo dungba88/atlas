@@ -13,12 +13,9 @@ public class FailedTaskResult implements TaskResult {
 
     private Throwable cause;
 
-    private TaskResult result;
-
-    public FailedTaskResult(String id, @NonNull Throwable cause, TaskResult result) {
+    public FailedTaskResult(String id, @NonNull Throwable cause) {
         this.id = id;
         this.cause = cause;
-        this.result = result;
     }
 
     @Override
@@ -29,6 +26,11 @@ public class FailedTaskResult implements TaskResult {
     @Override
     public TaskResultStatus getStatus() {
         return TaskResultStatus.FAILED;
+    }
+
+    @Override
+    public Object getResult() {
+        return null;
     }
 
     @Override

@@ -14,11 +14,8 @@ public class DefaultTaskResult implements TaskResult {
 
     private Object result;
 
-    private Throwable cause;
+    public DefaultTaskResult() {
 
-    public DefaultTaskResult(String id, Object result) {
-        this.id = id;
-        this.result = result;
     }
 
     @Override
@@ -34,5 +31,10 @@ public class DefaultTaskResult implements TaskResult {
     @Override
     public String toString() {
         return "Task completed sucessfully";
+    }
+
+    @Override
+    public Throwable getCause() {
+        return null;
     }
 }

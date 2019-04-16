@@ -1,4 +1,4 @@
-package org.joo.atlas.test;
+package org.joo.atlas.test.jobs;
 
 import org.joo.atlas.models.ExecutionContext;
 import org.joo.atlas.models.Job;

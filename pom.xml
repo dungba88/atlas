@@ -14,6 +14,9 @@
 		<maven.compiler.target>11</maven.compiler.target>
 		<maven.compiler.source>11</maven.compiler.source>
 		<micrometer.version>1.1.2</micrometer.version>
+		<kafka.junit4.version>3.1.0</kafka.junit4.version>
+		<kafka_2.11.version>2.1.0</kafka_2.11.version>
+		<guava.version>27.0.1-jre</guava.version>
 		<log4j2.version>2.11.1</log4j2.version>
 		<lombok.version>1.18.2</lombok.version>
 	</properties>
@@ -132,6 +135,24 @@
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>4.12</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.salesforce.kafka.test</groupId>
+			<artifactId>kafka-junit4</artifactId>
+			<version>${kafka.junit4.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.kafka</groupId>
+			<artifactId>kafka_2.11</artifactId>
+			<version>${kafka_2.11.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>${guava.version}</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

@@ -43,7 +43,7 @@ public class KafkaProducerRouter extends NonameComponentLifecycle implements Tas
     public Promise<Object, Throwable> routeJob(TaskNotifier notifier, String routingKey, Job job, TaskResult result) {
         var headers = BObject.of(KafkaConstants.KEY, routingKey);
         var body = BObject.of("taskId", job.getTaskTopo().getTaskId()) //
-                          .setAny("taskResult", result);
+                          .setAny("taskResult", result != null ? result.toBObject() : null);
         return producer.sendAnyWithAck(headers, body) //
                        .then(Promise::of);
     }

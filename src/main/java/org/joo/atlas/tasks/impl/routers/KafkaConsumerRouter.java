@@ -38,17 +38,22 @@ public class KafkaConsumerRouter extends NonameComponentLifecycle {
     private void processMessage(Message msg, Deferred<Message, Exception> deferred) {
         var batchId = msg.headers().getString(KafkaConstants.KEY);
         if (msg.body().isNullValue()) {
-            notifier.notifyBatchStart(batchId);
+            notifier.notifyBatchStart(batchId) //
+                    .done(r -> deferred.resolve(null)).fail(deferred::reject);
             return;
         }
         var body = msg.body().asObject();
         var taskId = body.getString("taskId");
         var result = body.getObject("taskResult");
-        notifier.notifyJobComplete(batchId, taskId, toTaskResult(result));
+        notifier.notifyJobComplete(batchId, taskId, toTaskResult(result)) //
+                .done(r -> deferred.resolve(null)) //
+                .fail(deferred::reject);
     }
 
     private TaskResult toTaskResult(BObject result) {
-        return result.toPojo(TaskResult.class);
+        if (result == null)
+            return null;
+        return TaskResult.fromPojo(result);
     }
 
     @Override

@@ -45,7 +45,7 @@ public abstract class AbstractTaskQueue extends NonameComponentLifecycle impleme
     }
 
     @Override
-    public Promise<Object, Throwable> notifyBatchStart(String batchId) {
+    public Promise<Object, Exception> notifyBatchStart(String batchId) {
         return storage.fetchBatchExecution(batchId).then(batchExecution -> {
             runJobs(batchExecution, batchId, batchExecution.getBatch().getBatch());
             return Promise.of(null);
@@ -53,7 +53,7 @@ public abstract class AbstractTaskQueue extends NonameComponentLifecycle impleme
     }
 
     @Override
-    public Promise<TaskResult, Throwable> notifyJobComplete(String batchId, String taskId, TaskResult result) {
+    public Promise<TaskResult, Exception> notifyJobComplete(String batchId, String taskId, TaskResult result) {
         if (result == null)
             result = new DefaultTaskResult(taskId, null);
         var theResult = result;
@@ -61,7 +61,7 @@ public abstract class AbstractTaskQueue extends NonameComponentLifecycle impleme
             var job = batchExecution.mapTask(taskId);
             batchExecution.completeJob(job, theResult);
             if (!theResult.isSuccessful()) {
-                return Promise.ofCause(theResult.getCause());
+                return Promise.ofCause(new RuntimeException(theResult.getCause()));
             }
             runChildJobs(batchId, job, batchExecution);
             return Promise.of(theResult);
@@ -81,7 +81,7 @@ public abstract class AbstractTaskQueue extends NonameComponentLifecycle impleme
         var batchId = context.getBatchId();
         var taskId = job.getTaskTopo().getTaskId();
         doRunJob(job, context).then(result -> router.routeJob(this, batchId, job, result)) //
-                              .fail(ex -> router.routeJob(this, batchId, job, new FailedTaskResult(taskId, ex, null)));
+                              .fail(ex -> router.routeJob(this, batchId, job, new FailedTaskResult(taskId, ex)));
     }
 
     protected void runChildJobs(String batchId, Job job, BatchExecution batchExecution) {
@@ -89,6 +89,11 @@ public abstract class AbstractTaskQueue extends NonameComponentLifecycle impleme
                          .map(batchExecution::mapTask) //
                          .toArray(size -> new Job[size]);
         runJobs(batchExecution, batchId, jobs);
+    }
+
+    @Override
+    protected void onStart() {
+        router.start();
     }
 
     @Override
