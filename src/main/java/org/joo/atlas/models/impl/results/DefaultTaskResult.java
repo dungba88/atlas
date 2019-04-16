@@ -3,6 +3,7 @@ package org.joo.atlas.models.impl.results;
 import org.joo.atlas.models.TaskResult;
 import org.joo.atlas.models.TaskResultStatus;
 
+import io.gridgo.bean.BElement;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -12,7 +13,7 @@ public class DefaultTaskResult implements TaskResult {
 
     private String id;
 
-    private Object result;
+    private BElement result;
 
     public DefaultTaskResult() {
 

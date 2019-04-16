@@ -3,6 +3,7 @@ package org.joo.atlas.models.impl.results;
 import org.joo.atlas.models.TaskResult;
 import org.joo.atlas.models.TaskResultStatus;
 
+import io.gridgo.bean.BElement;
 import lombok.Getter;
 
 @Getter
@@ -30,7 +31,7 @@ public class CanceledTaskResult implements TaskResult {
     }
 
     @Override
-    public Object getResult() {
+    public BElement getResult() {
         return null;
     }
 

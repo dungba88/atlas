@@ -5,6 +5,7 @@ import org.joo.atlas.models.impl.results.DefaultTaskResult;
 import org.joo.atlas.models.impl.results.FailedTaskResult;
 import org.joo.atlas.support.exceptions.RemoteException;
 
+import io.gridgo.bean.BElement;
 import io.gridgo.bean.BObject;
 
 public interface TaskResult {
@@ -17,7 +18,7 @@ public interface TaskResult {
 
     Throwable getCause();
 
-    Object getResult();
+    BElement getResult();
 
     default BObject toBObject() {
         return BObject.of("id", getId()) //
