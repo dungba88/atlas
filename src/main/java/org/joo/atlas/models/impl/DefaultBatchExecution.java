@@ -12,6 +12,7 @@ import org.joo.atlas.models.impl.results.BatchTaskResult;
 import org.joo.atlas.models.impl.results.CanceledTaskResult;
 import org.joo.promise4j.Deferred;
 
+import io.gridgo.bean.BArray;
 import lombok.Getter;
 
 @Getter
@@ -64,6 +65,7 @@ public class DefaultBatchExecution implements BatchExecution {
 
     protected void checkComplete() {
         if (isCompleted()) {
+            var completedJobs = BArray.ofSequence(this.completedJobs.values().toArray());
             deferred.resolve(new BatchTaskResult(batch.getId(), completedJobs));
         }
     }
